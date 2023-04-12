@@ -1,11 +1,9 @@
-/**
- * V. Hunter Adams (vha3@cornell.edu)
- */
-
 #include "pico/stdlib.h"
 
 // The LED is connected to GPIO 25
 #define LED_PIN 25
+
+// Alarms on GPIO pins 2-5
 #define ALARM0_PIN 2
 #define ALARM1_PIN 3
 #define ALARM2_PIN 4
@@ -46,7 +44,7 @@ bool repeating_timer2_callback(struct repeating_timer *t)
 }
 
 
-// Timer ISR
+// Timer3 ISR
 bool repeating_timer3_callback(struct repeating_timer *t)
  {
     gpio_put(ALARM3_PIN, alarm_state[3]);
@@ -68,7 +66,7 @@ int main()
     gpio_init(ALARM2_PIN);
     gpio_init(ALARM3_PIN);
 
-    // Configure the LED and ALARM pins as an output
+    // Configure the LED and ALARM pins as output
     gpio_set_dir(LED_PIN, GPIO_OUT);
     gpio_set_dir(ALARM0_PIN, GPIO_OUT);
     gpio_set_dir(ALARM1_PIN, GPIO_OUT);
@@ -83,14 +81,14 @@ int main()
 
 
     // Negative delay so means we will call repeating_timer_callback, and call it again
-    // 25us (40kHz) later regardless of how long the callback took to execute
+    // x us later regardless of how long the callback took to execute
     add_repeating_timer_us(-100, repeating_timer0_callback, NULL, &timers[0]);
     add_repeating_timer_us(-200, repeating_timer1_callback, NULL, &timers[1]);
     add_repeating_timer_us(-400, repeating_timer2_callback, NULL, &timers[2]);
     add_repeating_timer_us(-800, repeating_timer3_callback, NULL, &timers[3]);
 
 
-    // Loop
+    // Loop to flash LED to shown running
     while (true)
     {
         gpio_put(LED_PIN, led_state);
