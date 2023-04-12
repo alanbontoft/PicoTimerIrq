@@ -9,57 +9,50 @@
 #define ALARM2_PIN 4
 #define ALARM3_PIN 5
 
-bool alarm_state[4] = {false, false, false,false};
+bool alarm_state[4] = {false, false, false, false};
 struct repeating_timer timers[4];
 bool led_state = false;
+int index;
+uint pin;
 
-// Timer0 ISR
-bool repeating_timer0_callback(struct repeating_timer *t)
- {
-    gpio_put(ALARM0_PIN, alarm_state[0]);
 
-    alarm_state[0] = !alarm_state[0];
+// Timer ISR
+// Alarm 0 has ID 1, 1 has ID 2, etc.
+bool repeating_timer_callback(struct repeating_timer *t)
+{
+    index = t->alarm_id-1;
 
+    // select pin to toggle
+    switch (index)
+    {
+        case 0: pin = ALARM0_PIN;
+                break;
+        case 1: pin = ALARM1_PIN;
+                break;
+        case 2: pin = ALARM2_PIN;
+                break;
+        case 3: pin = ALARM3_PIN;
+                break;
+        
+        default:
+            break;
+    }
+
+    // set pin level
+    gpio_put(pin, alarm_state[index]);
+
+    // toggle state
+    alarm_state[index] = !alarm_state[index];
+
+    // return true to keep repeating
     return true;
 }
 
-// Timer1 ISR
-bool repeating_timer1_callback(struct repeating_timer *t)
- {
-    gpio_put(ALARM1_PIN, alarm_state[1]);
-
-    alarm_state[1] = !alarm_state[1];
-
-    return true;
-}
-
-// Timer2 ISR
-bool repeating_timer2_callback(struct repeating_timer *t)
- {
-    gpio_put(ALARM2_PIN, alarm_state[2]);
-
-    alarm_state[2] = !alarm_state[2];
-
-    return true;
-}
-
-
-// Timer3 ISR
-bool repeating_timer3_callback(struct repeating_timer *t)
- {
-    gpio_put(ALARM3_PIN, alarm_state[3]);
-
-    alarm_state[3] = !alarm_state[3];
-
-    return true;
-}
 
 // Main (runs on core 0)
 int main()
 {
-
-    
-     // Initialize the gpio pins
+    // Initialize the gpio pins
     gpio_init(LED_PIN);
     gpio_init(ALARM0_PIN);
     gpio_init(ALARM1_PIN);
@@ -82,10 +75,10 @@ int main()
 
     // Negative delay so means we will call repeating_timer_callback, and call it again
     // x us later regardless of how long the callback took to execute
-    add_repeating_timer_us(-100, repeating_timer0_callback, NULL, &timers[0]);
-    add_repeating_timer_us(-200, repeating_timer1_callback, NULL, &timers[1]);
-    add_repeating_timer_us(-400, repeating_timer2_callback, NULL, &timers[2]);
-    add_repeating_timer_us(-800, repeating_timer3_callback, NULL, &timers[3]);
+    add_repeating_timer_us(-100, repeating_timer_callback, NULL, &timers[0]);
+    add_repeating_timer_us(-200, repeating_timer_callback, NULL, &timers[1]);
+    add_repeating_timer_us(-400, repeating_timer_callback, NULL, &timers[2]);
+    add_repeating_timer_us(-800, repeating_timer_callback, NULL, &timers[3]);
 
 
     // Loop to flash LED to shown running
